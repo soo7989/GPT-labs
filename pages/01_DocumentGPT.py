@@ -13,7 +13,6 @@ st.set_page_config(
     page_icon="📚",
 )
 
-llm = ChatOpenAI(temperature=0.1)
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
@@ -84,12 +83,9 @@ st.markdown(
 )
 
 with st.sidebar:
-    file = st.file_uploader(
-        "Upload your txt, pdf, docx",
-        type=["pdf", "docx", "txt"],
-    )
+
     if "api_key" not in st.session_state:
-        st.session_state["api_key"] = ""
+        st.session_state.api_key = ""
 
     api_key = st.text_input(
         "OPENAI_API_KEY",
@@ -98,12 +94,22 @@ with st.sidebar:
     )
     st.session_state["api_key"] = api_key
 
+    file = st.file_uploader(
+        "Upload your txt, pdf, docx",
+        type=["pdf", "docx", "txt"],
+    )
+
     st.markdown(
         """
         GitHub: https://github.com/soo7989/GPT-labs
 
         """
     )
+
+llm = ChatOpenAI(
+    temperature=0.1,
+    openai_api_key=api_key,
+)
 
 if file:
     retriever = embed_file(file)
