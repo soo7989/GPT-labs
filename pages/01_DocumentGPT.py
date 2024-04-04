@@ -1,9 +1,11 @@
-import time
+from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import UnstructuredFileLoader
 from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
+from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.storage import LocalFileStore
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
+from langchain.chat_models import ChatOpenAI
 import streamlit as st
 
 st.set_page_config(
@@ -11,7 +13,13 @@ st.set_page_config(
     page_icon="📚",
 )
 
+llm = ChatOpenAI(temperature=0.1)
 
+if "messages" not in st.session_state:
+    st.session_state["messages"] = []
+
+
+@st.cache_data(show_spinner="Embedding file")
 def embed_file(file):
     file_content = file.read()
     file_path = f"./.cache/files/{file.name}"
@@ -32,19 +40,71 @@ def embed_file(file):
     return retriever
 
 
+def send_message(message, role, save=True):
+    with st.chat_message(role):
+        st.markdown(message)
+    if save:
+        st.session_state["messages"].append({"message": message, "role": role})
+
+
+def paint_history():
+    for message in st.session_state["messages"]:
+        send_message(
+            message["message"],
+            message["role"],
+            save=False,
+        )
+
+
+def format_docs(docs):
+    return "\n".join(document.page_content for document in docs)
+
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """
+            Answer the question using ONLY the following context. If you don't know the answer just say you don't know. DON'T make anything up.
+
+            Context: {context}
+            """,
+        ),
+        ("human", "{question}"),
+    ]
+)
+
 st.title("Document GPT")
 st.markdown(
     """
-    안녕, 챗봇을 이용해서 문서의 내용을 정리할 수 있어! 
+    챗봇을 이용하여 문서의 내용을 정리할 수 있어요! 
+
+    문서를 사이드바에서 업로드 해주세요.
     """
 )
 
-file = st.file_uploader(
-    "Upload your txt, pdf, docx",
-    type=["pdf", "docx", "txt"],
-)
+with st.sidebar:
+    file = st.file_uploader(
+        "Upload your txt, pdf, docx",
+        type=["pdf", "docx", "txt"],
+    )
 
 if file:
     retriever = embed_file(file)
-    s = retriever.invoke("김첨지")
-    s
+    send_message("무엇을 할까요?", "ai", save=False)
+    paint_history()
+    message = st.chat_input("현재 문서에서 무엇을 할까요?")
+    if message:
+        send_message(message, "human")
+        chain = (
+            {
+                "context": retriever | RunnableLambda(format_docs),
+                "question": RunnablePassthrough(),
+            }
+            | prompt
+            | llm
+        )
+        response = chain.invoke(message)
+        send_message(response.content, "ai")
+    else:
+        st.session_state["messages"] = []
