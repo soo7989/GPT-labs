@@ -88,6 +88,22 @@ with st.sidebar:
         "Upload your txt, pdf, docx",
         type=["pdf", "docx", "txt"],
     )
+    if "api_key" not in st.session_state:
+        st.session_state["api_key"] = ""
+
+    api_key = st.text_input(
+        "OPENAI_API_KEY",
+        value=st.session_state["api_key"],
+        key="api_key_input",
+    )
+    st.session_state["api_key"] = api_key
+
+    st.markdown(
+        """
+        GitHub: https://github.com/soo7989/GPT-labs
+
+        """
+    )
 
 if file:
     retriever = embed_file(file)
