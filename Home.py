@@ -1,9 +1,22 @@
 import streamlit as st
 
-st.title("운수 좋은 날")
-st.subheader("왜 먹질 못하니!")
+st.set_page_config(
+    page_title="Potato GPT Home",
+    page_icon=":potato",
+)
 st.markdown(
     """
-       어쩐지 운이 좋던 어느 날
+        # Hello!
+        
+        Welcome to Potato GPT!
+        
+        Here are the apps I made:
+        
+        - [ ] [DocumentGPT](/DocumentGPT)
+        - [ ] [PrivateGPT](/PrivateGPT)
+        - [ ] [QuizGPT](/QuizGPT)
+        - [ ] [SiteGPT](/SiteGPT)
+        - [ ] [MeetingGPT](/MeetingGPT)
+        - [ ] [InvestorGPT](/InvestorGPT)
     """
 )
