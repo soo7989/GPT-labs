@@ -83,6 +83,12 @@ st.markdown(
 )
 
 with st.sidebar:
+    st.markdown(
+        """
+        GitHub: https://github.com/soo7989/GPT-labs
+
+        """
+    )
 
     if "api_key" not in st.session_state:
         st.session_state.api_key = ""
@@ -99,12 +105,6 @@ with st.sidebar:
         type=["pdf", "docx", "txt"],
     )
 
-    st.markdown(
-        """
-        GitHub: https://github.com/soo7989/GPT-labs
-
-        """
-    )
 
 llm = ChatOpenAI(
     temperature=0.1,
