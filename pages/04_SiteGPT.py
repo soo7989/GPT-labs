@@ -38,13 +38,51 @@ def get_answers(inputs):
     docs = inputs["docs"]
     question = inputs["question"]
     answers_chain = answers_prompt | llm
-    answers = []
-    for doc in docs:
-        result = answers_chain.invoke(
-            {"question": question, "context": doc.page_content}
-        )
-        answers.append(result.content)
-    st.write(answers)
+    return {
+        "question": question,
+        "answers": [
+            {
+                "answer": answers_chain.invoke(
+                    {"question": question, "context": doc.page_content}
+                ).content,
+                "source": doc.metadata["source"],
+                "date": doc.metadata["lastmod"],
+            }
+            for doc in docs
+        ],
+    }
+
+
+choose_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """
+            Use ONLY the following pre-existing answers to answer the user's question.
+            Use the answers that have the highest score (more helpful) and favor the most recent ones.
+            Cite sources and return the sources of the answers as they are, do not change them.
+            Answers: {answers}
+            """,
+        ),
+        ("human", "{question}"),
+    ]
+)
+
+
+def choose_answer(inputs):
+    answers = inputs["answers"]
+    question = inputs["question"]
+    choose_chain = choose_prompt | llm
+    condensed = "\n\n".join(
+        f"{answer['answer']}\nSource:{answer['source']}\nDate:{answer['date']}\n"
+        for answer in answers
+    )
+    return choose_chain.invoke(
+        {
+            "question": question,
+            "answers": condensed,
+        }
+    )
 
 
 def parse_page(soup):
@@ -108,9 +146,16 @@ if url:
 
     else:
         retriever = load_website(url)
-        chain = {
-            "docs": retriever,
-            "question": RunnablePassthrough(),
-        } | RunnableLambda(get_answers)
+        query = st.text_input("Ask a question to the website")
 
-        chain.invoke("What is the pricing of GPT-4 Turbo with vision.")
+        if query:
+            chain = (
+                {
+                    "docs": retriever,
+                    "question": RunnablePassthrough(),
+                }
+                | RunnableLambda(get_answers)
+                | RunnableLambda(choose_answer)
+            )
+            result = chain.invoke(query)
+            st.markdown(result.content.replace("$", "\$"))
