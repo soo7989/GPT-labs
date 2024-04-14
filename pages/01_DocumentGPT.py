@@ -18,7 +18,7 @@ if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
 
-@st.cache_data(show_spinner="Embedding file")
+@st.cache_resource(show_spinner="Embedding file")
 def embed_file(file):
     file_content = file.read()
     file_path = f"./.cache/files/{file.name}"
@@ -78,7 +78,11 @@ st.markdown(
     """
     챗봇을 이용하여 문서의 내용을 정리할 수 있어요! 
 
-    문서를 사이드바에서 업로드 해주세요.
+    1. 사이드바에서 OPENAI_API_KEY 를 입력합니다. 
+    
+    2. 사이드바에서 문서를 업로드 합니다.
+    
+    3. 아래의 입력창을 통해 문서에서 필요한 내용을 질문합니다.   
     """
 )
 
@@ -115,7 +119,7 @@ if file:
     retriever = embed_file(file)
     send_message("무엇을 할까요?", "ai", save=False)
     paint_history()
-    message = st.chat_input("현재 문서에서 무엇을 할까요?")
+    message = st.chat_input("무엇을 할까요?")
     if message:
         send_message(message, "human")
         chain = (
