@@ -13,7 +13,6 @@ st.set_page_config(
     page_icon="📚",
 )
 
-
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
@@ -110,10 +109,15 @@ with st.sidebar:
     )
 
 
-llm = ChatOpenAI(
-    temperature=0.1,
-    openai_api_key=api_key,
-)
+try:
+    llm = ChatOpenAI(
+        temperature=0.1,
+        openai_api_key=api_key,
+    )
+    print(api_key)
+except Exception as e:
+    print(e)
+    print(api_key)
 
 if file:
     retriever = embed_file(file)
